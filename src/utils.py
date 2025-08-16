@@ -1,75 +1,234 @@
 """
-Utilidades para el sistema de gestión de tareas
+Módulo de utilidades para el Sistema de Gestión de Tareas.
+
+Este módulo contiene funciones de ayuda para formatear fechas,
+validar datos, y mostrar información de manera ordenada.
 """
 
 from datetime import datetime
-from typing import List
-from .task import Task, TaskStatus, TaskPriority
+from typing import List, Optional
 
-def format_datetime(dt: datetime) -> str:
-    """Formatea una fecha y hora para mostrar"""
-    if dt is None:
-        return "N/A"
-    return dt.strftime("%d/%m/%Y %H:%M")
 
-def format_date(dt: datetime) -> str:
-    """Formatea solo la fecha"""
-    if dt is None:
-        return "N/A"
-    return dt.strftime("%d/%m/%Y")
+def format_date(date: datetime) -> str:
+    """
+    Formatea una fecha para mostrar de manera legible.
+    
+    Args:
+        date (datetime): Fecha a formatear
+        
+    Returns:
+        str: Fecha formateada como YYYY-MM-DD
+    """
+    return date.strftime("%Y-%m-%d")
 
-def get_status_color(status: TaskStatus) -> str:
-    """Obtiene el color para el estado de la tarea"""
-    colors = {
-        TaskStatus.PENDIENTE: "yellow",
-        TaskStatus.EN_PROGRESO: "blue", 
-        TaskStatus.COMPLETADA: "green"
+
+def format_datetime(date: datetime) -> str:
+    """
+    Formatea una fecha y hora para mostrar de manera legible.
+    
+    Args:
+        date (datetime): Fecha y hora a formatear
+        
+    Returns:
+        str: Fecha y hora formateada como YYYY-MM-DD HH:MM
+    """
+    return date.strftime("%Y-%m-%d %H:%M")
+
+
+def parse_date(date_str: str) -> Optional[datetime]:
+    """
+    Convierte una cadena de fecha en objeto datetime.
+    
+    Args:
+        date_str (str): Cadena de fecha en formato YYYY-MM-DD
+        
+    Returns:
+        Optional[datetime]: Objeto datetime si es válido, None en caso contrario
+    """
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        try:
+            # Intentar formato con hora
+            return datetime.strptime(date_str, "%Y-%m-%d %H:%M")
+        except ValueError:
+            return None
+
+
+def validate_status(status: str) -> bool:
+    """
+    Valida que el estado de la tarea sea válido.
+    
+    Args:
+        status (str): Estado a validar
+        
+    Returns:
+        bool: True si es válido, False en caso contrario
+    """
+    valid_statuses = ["pendiente", "en_progreso", "completada"]
+    return status.lower() in valid_statuses
+
+
+def get_status_icon(status: str) -> str:
+    """
+    Obtiene el icono correspondiente al estado de la tarea.
+    
+    Args:
+        status (str): Estado de la tarea
+        
+    Returns:
+        str: Icono correspondiente al estado
+    """
+    icons = {
+        "pendiente": "⏳",
+        "en_progreso": "🔄",
+        "completada": "✅"
     }
-    return colors.get(status, "white")
+    return icons.get(status.lower(), "❓")
 
-def get_priority_color(priority: TaskPriority) -> str:
-    """Obtiene el color para la prioridad de la tarea"""
-    colors = {
-        TaskPriority.BAJA: "green",
-        TaskPriority.MEDIA: "yellow",
-        TaskPriority.ALTA: "red"
-    }
-    return colors.get(priority, "white")
 
-def sort_tasks_by_priority(tasks: List[Task]) -> List[Task]:
-    """Ordena las tareas por prioridad (alta -> media -> baja)"""
-    priority_order = {
-        TaskPriority.ALTA: 3,
-        TaskPriority.MEDIA: 2,
-        TaskPriority.BAJA: 1
-    }
-    return sorted(tasks, key=lambda t: priority_order[t.priority], reverse=True)
-
-def sort_tasks_by_date(tasks: List[Task], by_created: bool = True) -> List[Task]:
-    """Ordena las tareas por fecha de creación o actualización"""
-    if by_created:
-        return sorted(tasks, key=lambda t: t.created_at, reverse=True)
+def get_priority_color(days_until_due: int) -> str:
+    """
+    Obtiene el color de prioridad basado en los días hasta vencimiento.
+    
+    Args:
+        days_until_due (int): Días hasta el vencimiento
+        
+    Returns:
+        str: Indicador de prioridad
+    """
+    if days_until_due < 0:
+        return "🔴"  # Vencida
+    elif days_until_due <= 1:
+        return "🟠"  # Urgente
+    elif days_until_due <= 3:
+        return "🟡"  # Próxima
     else:
-        return sorted(tasks, key=lambda t: t.updated_at, reverse=True)
+        return "🟢"  # Normal
 
-def filter_tasks_by_keyword(tasks: List[Task], keyword: str) -> List[Task]:
-    """Filtra tareas que contengan una palabra clave"""
-    keyword = keyword.lower()
-    return [task for task in tasks 
-            if keyword in task.title.lower() or keyword in task.description.lower()]
 
-def get_task_summary(task: Task) -> str:
-    """Obtiene un resumen corto de la tarea"""
-    status_symbols = {
-        TaskStatus.PENDIENTE: "⏳",
-        TaskStatus.EN_PROGRESO: "🔄", 
-        TaskStatus.COMPLETADA: "✅"
-    }
+def display_tasks_table(tasks: List) -> None:
+    """
+    Muestra las tareas en formato de tabla simple.
     
-    priority_symbols = {
-        TaskPriority.BAJA: "🟢",
-        TaskPriority.MEDIA: "🟡",
-        TaskPriority.ALTA: "🔴"
-    }
+    Args:
+        tasks (List[Task]): Lista de tareas a mostrar
+    """
+    if not tasks:
+        print("📝 No hay tareas para mostrar.")
+        return
     
-    return f"{status_symbols[task.status]} {priority_symbols[task.priority]} [{task.id}] {task.title}"
+    print(f"\n{'ID':<4} {'Estado':<12} {'Nombre':<25} {'Descripción':<30} {'Vencimiento':<15}")
+    print("-" * 90)
+    
+    now = datetime.now()
+    
+    for task in tasks:
+        # Calcular días hasta vencimiento
+        days_until = (task.due_date - now).days
+        priority_icon = get_priority_color(days_until)
+        
+        # Truncar descripción si es muy larga
+        description = task.description
+        if len(description) > 27:
+            description = description[:27] + "..."
+        
+        # Truncar nombre si es muy largo
+        name = task.name
+        if len(name) > 22:
+            name = name[:22] + "..."
+        
+        status_display = f"{get_status_icon(task.status)} {task.status}"
+        
+        print(f"{task.id:<4} {status_display:<12} {name:<25} {description:<30} {format_date(task.due_date):<15} {priority_icon}")
+
+
+def display_task_details(task) -> None:
+    """
+    Muestra los detalles completos de una tarea.
+    
+    Args:
+        task (Task): Tarea a mostrar
+    """
+    print(f"\n📋 DETALLES DE LA TAREA #{task.id}")
+    print("=" * 40)
+    print(f"Nombre: {task.name}")
+    print(f"Descripción: {task.description}")
+    print(f"Estado: {get_status_icon(task.status)} {task.status}")
+    print(f"Fecha de vencimiento: {format_date(task.due_date)}")
+    print(f"Fecha de creación: {format_datetime(task.created_at)}")
+    
+    # Calcular días hasta vencimiento
+    now = datetime.now()
+    days_until = (task.due_date - now).days
+    
+    if days_until < 0:
+        print(f"⚠️  VENCIDA hace {abs(days_until)} día(s)")
+    elif days_until == 0:
+        print("⚠️  VENCE HOY")
+    elif days_until == 1:
+        print("🟠 Vence mañana")
+    else:
+        print(f"📅 Vence en {days_until} día(s)")
+
+
+def validate_task_input(name: str, description: str = "") -> bool:
+    """
+    Valida los datos de entrada para una tarea.
+    
+    Args:
+        name (str): Nombre de la tarea
+        description (str): Descripción de la tarea
+        
+    Returns:
+        bool: True si los datos son válidos
+    """
+    if not name or not name.strip():
+        print("❌ El nombre de la tarea no puede estar vacío.")
+        return False
+    
+    if len(name.strip()) > 100:
+        print("❌ El nombre de la tarea no puede tener más de 100 caracteres.")
+        return False
+    
+    if len(description) > 500:
+        print("❌ La descripción no puede tener más de 500 caracteres.")
+        return False
+    
+    return True
+
+
+def confirm_action(message: str) -> bool:
+    """
+    Solicita confirmación del usuario para una acción.
+    
+    Args:
+        message (str): Mensaje a mostrar
+        
+    Returns:
+        bool: True si el usuario confirma, False en caso contrario
+    """
+    response = input(f"{message} (s/N): ").strip().lower()
+    return response == 's' or response == 'si'
+
+
+def print_header(title: str) -> None:
+    """
+    Imprime un encabezado formateado.
+    
+    Args:
+        title (str): Título del encabezado
+    """
+    print(f"\n{title}")
+    print("=" * len(title))
+
+
+def print_section(title: str) -> None:
+    """
+    Imprime un título de sección formateado.
+    
+    Args:
+        title (str): Título de la sección
+    """
+    print(f"\n{title}")
+    print("-" * len(title))

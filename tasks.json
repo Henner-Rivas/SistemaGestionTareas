@@ -1,0 +1,21 @@
+{
+  "next_id": 3,
+  "tasks": [
+    {
+      "id": 1,
+      "name": "ir al banco",
+      "description": "sacar dinero",
+      "due_date": "2025-12-13T00:00:00",
+      "status": "en_progreso",
+      "created_at": "2025-08-16T00:15:49.458235"
+    },
+    {
+      "id": 2,
+      "name": "cocinar",
+      "description": "pollo con queso",
+      "due_date": "2025-12-12T00:00:00",
+      "status": "pendiente",
+      "created_at": "2025-08-16T00:16:35.632293"
+    }
+  ]
+}

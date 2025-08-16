@@ -1,102 +1,132 @@
 """
-Clase Task para representar una tarea
+Módulo que define la clase Task para el Sistema de Gestión de Tareas.
+
+Esta clase representa una tarea individual con sus atributos y métodos
+para manipular la información de la tarea.
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from typing import Dict, Any
 
-class TaskStatus(Enum):
-    PENDIENTE = "pendiente"
-    EN_PROGRESO = "en_progreso"
-    COMPLETADA = "completada"
-
-class TaskPriority(Enum):
-    BAJA = "baja"
-    MEDIA = "media"
-    ALTA = "alta"
 
 class Task:
-    """Representa una tarea en el sistema de gestión"""
+    """
+    Representa una tarea individual en el sistema.
     
-    def __init__(self, 
-                 title: str, 
-                 description: str = "", 
-                 priority: TaskPriority = TaskPriority.MEDIA,
-                 due_date: Optional[datetime] = None):
-        self.id = None  # Se asignará por el TaskManager
-        self.title = title
+    Attributes:
+        id (int): Identificador único de la tarea
+        name (str): Nombre de la tarea
+        description (str): Descripción detallada
+        due_date (datetime): Fecha de vencimiento
+        status (str): Estado actual (pendiente, en_progreso, completada)
+        created_at (datetime): Fecha de creación
+    """
+    
+    VALID_STATUSES = ["pendiente", "en_progreso", "completada"]
+    
+    def __init__(self, id: int, name: str, description: str = "", 
+                 due_date: datetime = None, status: str = "pendiente"):
+        """
+        Inicializa una nueva tarea.
+        
+        Args:
+            id (int): Identificador único de la tarea
+            name (str): Nombre de la tarea
+            description (str): Descripción de la tarea
+            due_date (datetime): Fecha de vencimiento
+            status (str): Estado inicial de la tarea
+            
+        Raises:
+            ValueError: Si el estado no es válido
+        """
+        if status not in self.VALID_STATUSES:
+            raise ValueError(f"Estado inválido. Estados válidos: {self.VALID_STATUSES}")
+        
+        self.id = id
+        self.name = name
         self.description = description
-        self.priority = priority
-        self.status = TaskStatus.PENDIENTE
+        self.due_date = due_date or datetime.now()
+        self.status = status
         self.created_at = datetime.now()
-        self.updated_at = datetime.now()
-        self.due_date = due_date
-        self.completed_at = None
     
-    def mark_completed(self):
-        """Marca la tarea como completada"""
-        self.status = TaskStatus.COMPLETADA
-        self.completed_at = datetime.now()
-        self.updated_at = datetime.now()
+    def update(self, name: str = None, description: str = None, 
+               due_date: datetime = None, status: str = None) -> None:
+        """
+        Actualiza los atributos de la tarea.
+        
+        Args:
+            name (str): Nuevo nombre de la tarea
+            description (str): Nueva descripción
+            due_date (datetime): Nueva fecha de vencimiento
+            status (str): Nuevo estado de la tarea
+            
+        Raises:
+            ValueError: Si el estado no es válido
+        """
+        if name is not None:
+            self.name = name
+        if description is not None:
+            self.description = description
+        if due_date is not None:
+            self.due_date = due_date
+        if status is not None:
+            if status not in self.VALID_STATUSES:
+                raise ValueError(f"Estado inválido. Estados válidos: {self.VALID_STATUSES}")
+            self.status = status
     
-    def mark_in_progress(self):
-        """Marca la tarea como en progreso"""
-        self.status = TaskStatus.EN_PROGRESO
-        self.updated_at = datetime.now()
-    
-    def update_priority(self, priority: TaskPriority):
-        """Actualiza la prioridad de la tarea"""
-        self.priority = priority
-        self.updated_at = datetime.now()
-    
-    def update_description(self, description: str):
-        """Actualiza la descripción de la tarea"""
-        self.description = description
-        self.updated_at = datetime.now()
-    
-    def to_dict(self):
-        """Convierte la tarea a diccionario para serialización"""
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convierte la tarea a un diccionario para serialización.
+        
+        Returns:
+            Dict[str, Any]: Diccionario con los datos de la tarea
+        """
         return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'priority': self.priority.value,
-            'status': self.status.value,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
-            'due_date': self.due_date.isoformat() if self.due_date else None,
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "due_date": self.due_date.isoformat(),
+            "status": self.status,
+            "created_at": self.created_at.isoformat()
         }
     
     @classmethod
-    def from_dict(cls, data: dict):
-        """Crea una tarea desde un diccionario"""
+    def from_dict(cls, data: Dict[str, Any]) -> 'Task':
+        """
+        Crea una tarea desde un diccionario.
+        
+        Args:
+            data (Dict[str, Any]): Diccionario con los datos de la tarea
+            
+        Returns:
+            Task: Nueva instancia de Task
+        """
         task = cls(
-            title=data['title'],
-            description=data['description'],
-            priority=TaskPriority(data['priority'])
+            id=data["id"],
+            name=data["name"],
+            description=data.get("description", ""),
+            due_date=datetime.fromisoformat(data["due_date"]),
+            status=data["status"]
         )
-        task.id = data['id']
-        task.status = TaskStatus(data['status'])
-        task.created_at = datetime.fromisoformat(data['created_at'])
-        task.updated_at = datetime.fromisoformat(data['updated_at'])
-        if data['due_date']:
-            task.due_date = datetime.fromisoformat(data['due_date'])
-        if data['completed_at']:
-            task.completed_at = datetime.fromisoformat(data['completed_at'])
+        task.created_at = datetime.fromisoformat(data["created_at"])
         return task
     
-    def __str__(self):
-        status_emoji = {
-            TaskStatus.PENDIENTE: "⏳",
-            TaskStatus.EN_PROGRESO: "🔄",
-            TaskStatus.COMPLETADA: "✅"
-        }
-        priority_emoji = {
-            TaskPriority.BAJA: "🟢",
-            TaskPriority.MEDIA: "🟡",
-            TaskPriority.ALTA: "🔴"
-        }
+    def __str__(self) -> str:
+        """
+        Representación en cadena de la tarea.
         
-        return f"{status_emoji[self.status]} {priority_emoji[self.priority]} [{self.id}] {self.title}"
+        Returns:
+            str: Descripción legible de la tarea
+        """
+        return (f"Tarea #{self.id}: {self.name} "
+                f"[{self.status.upper()}] - Vence: {self.due_date.strftime('%Y-%m-%d')}")
+    
+    def __repr__(self) -> str:
+        """
+        Representación técnica de la tarea.
+        
+        Returns:
+            str: Representación técnica del objeto
+        """
+        return (f"Task(id={self.id}, name='{self.name}', "
+                f"status='{self.status}', due_date={self.due_date})")
