@@ -1,5 +1,5 @@
 {
-  "next_id": 3,
+  "next_id": 4,
   "tasks": [
     {
       "id": 1,
@@ -16,6 +16,14 @@
       "due_date": "2025-12-12T00:00:00",
       "status": "pendiente",
       "created_at": "2025-08-16T00:16:35.632293"
+    },
+    {
+      "id": 3,
+      "name": "Ver movie",
+      "description": "casa del dragon",
+      "due_date": "2025-10-10T00:00:00",
+      "status": "pendiente",
+      "created_at": "2025-08-16T23:08:12.271062"
     }
   ]
 }
