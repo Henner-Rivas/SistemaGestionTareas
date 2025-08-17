@@ -28,8 +28,8 @@ SistemaGestionTareas/
 │   ├── test_task.py           # Pruebas de la clase Task
 │   ├── test_task_manager.py   # Pruebas del TaskManager
 │   └── test_integration.py    # Pruebas de integración
-├── docs/
-│   └── README.md
+├──── README.md 
+│   
 ├── requirements.txt
 └── main.py                    # Punto de entrada
 ```
